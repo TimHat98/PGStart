@@ -1,0 +1,70 @@
+--- 1.Установка Postgres(Docker) ---
+Создание docker-compose
+cd docker/
+mkdir pg_data
+touch docker/docker-compose.yaml
+Команды docker:
+docker up
+docker-compose up --build
+docker ps -a
+
+--- 3.Создание таблиц ---
+CREATE TABLE Students(
+	s_id integer PRIMARY KEY,
+	name text,
+	start_year integer);
+--
+CREATE TABLE Courses(
+	c_no text PRIMARY KEY,
+	title text,
+	hours integer);
+--
+CREATE TABLE Exams(
+	s_id integer REFERENCES Students(s_id),
+	c_no integer REFERENCES Courses(c_no),
+	score integer,
+	CONSTRAINT pk PRIMARY KEY (s_id, c_no)
+	);
+--- 4.8.Записи в таблицах 
+INSERT INTO Students (s_id, name, start_year) VALUES
+(1, 'Анна', 2018),
+(2, 'Виктор', 2019),
+(3, 'Нина', 2017),
+(4, 'Иван', 2020),
+(5, 'Илья', 2019),
+(6, 'Вадим', 2018),
+(7, 'Николай', 2020),
+(8, 'Аркадий', 2017);
+-- 
+INSERT INTO Courses (c_no, title, hours) VALUES
+(101, 'Математический анализ', 40),
+(102, 'Экономика', 50),
+(103, 'Базы данных', 30),
+(104, 'Электротехника', 45);
+
+-- 
+INSERT INTO Exams (s_id, c_no, score) VALUES
+(1, 101, 5),
+(1, 102, 4),
+(2, 101, 3),
+(2, 102, 2),
+(3, 103, 4),
+(4, 104, 5);
+---
+--- SQL запросы
+--Возвращает всех студентов, которые еще не сдали ни одного экзамена:
+SELECT s_id, name
+FROM Students
+WHERE s_id NOT IN (SELECT s_id FROM Exams);
+--Возвращает список студентов и количество сданных им экзаменов(Только для студентов, у которых есть сданные экзамены):
+SELECT Students.s_id, Students.name, COUNT(Exams.s_id) AS exam_count
+FROM Students
+INNER JOIN Exams ON Students.s_id = Exams.s_id
+GROUP BY Students.s_id, Students.name;
+--Возвращает список курсов со средним баллом по экзамену (Список отсортирован по убыванию среднего балла):
+SELECT Courses.c_no, Courses.title, AVG(Exams.score) AS avg_score
+FROM Courses
+INNER JOIN Exams ON Courses.c_no = Exams.c_no
+GROUP BY Courses.c_no, Courses.title
+ORDER BY avg_score DESC;
+---
